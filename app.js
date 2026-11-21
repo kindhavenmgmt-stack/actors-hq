@@ -3010,7 +3010,7 @@
               </ol>
               Scans are saved in <code>My Drive / The Actor’s HQ / SAG Checks / &lt;year&gt;</code>.
             </div>
-            <label>Web app URL<input data-setting="driveUrl" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(s.driveUrl)}"></label>
+            <label>Web app URL <span class="muted" style="font-weight:400">(or paste your phone setup link)</span><input data-setting="driveUrl" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(s.driveUrl)}"></label>
             <label>Secret password (same as in the script)<input type="password" data-setting="driveSecret" value="${esc(s.driveSecret)}" autocomplete="off"></label>
             <label class="inline"><input type="checkbox" data-setting="autoUpload" ${s.autoUpload ? 'checked' : ''}> Upload check scans to Drive automatically when I add them</label>
             <label class="inline"><input type="checkbox" data-setting="autoBackup" ${s.autoBackup ? 'checked' : ''}> Back up my data to Drive automatically after changes</label>
@@ -3041,7 +3041,7 @@
             <p class="muted small" style="margin:0">The version with its own icon (the white shooting star), hosted on GitHub Pages. It holds no data — it loads yours from your Google Drive helper after you enter your Drive password on the phone.</p>
             <label>App address<input data-setting="homeUrl" placeholder="https://yourname.github.io/actors-hq/" value="${esc(s.homeUrl || '')}"></label>
             ${s.homeUrl && s.driveUrl ? `<div class="row"><button class="btn sm primary" data-action="home-copy">Copy phone setup link</button></div>
-              <ol class="small" style="margin:0;padding-left:18px;color:var(--muted)"><li>Send yourself the setup link and open it in Safari on your iPhone.</li><li>Tap <b>Share → Add to Home Screen</b>.</li><li>Open the new icon, then enter your Drive password in Settings → Google Drive. Your data loads in a few seconds.</li></ol>` : ''}
+              <ol class="small" style="margin:0;padding-left:18px;color:var(--muted)"><li>Send yourself the setup link (Messages or Notes).</li><li>On your iPhone, open the app address in Safari and tap <b>Share → Add to Home Screen</b>.</li><li>Open the new icon → <b>Settings → Google Drive</b>: paste the setup link into <b>Web app URL</b> and type your Drive password. Your data loads in a few seconds.</li></ol>` : ''}
           </div>
         </div>
         <div class="card">
@@ -4111,6 +4111,8 @@
     if (t.dataset.setting) {
       const key = t.dataset.setting;
       state.settings[key] = t.type === 'checkbox' ? t.checked : t.value.trim();
+      // Pasting the whole phone setup link (…#connect=…) into the Web app URL box works too.
+      if (key === 'driveUrl') { const mm = /#connect=(.+)$/.exec(state.settings.driveUrl); if (mm) { try { state.settings.driveUrl = decodeURIComponent(mm[1]); } catch (e) {} } }
       save(); render();
       return;
     }
