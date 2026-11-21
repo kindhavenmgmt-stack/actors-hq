@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+  <linearGradient id="hide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b3729"/><stop offset="1" stop-color="#22170f"/></linearGradient>
+  <filter id="grain" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="11" result="g"/>
+    <feColorMatrix in="g" type="matrix" values="0 0 0 0 0.6  0 0 0 0 0.47  0 0 0 0 0.36  0 0 0 0.45 -0.18" result="gC"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="3" result="p"/>
+    <feColorMatrix in="p" type="matrix" values="0 0 0 0 0.05  0 0 0 0 0.03  0 0 0 0 0.02  0 0 0 0.7 -0.28" result="pC"/>
+    <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="pC"/><feMergeNode in="gC"/></feMerge>
+  </filter>
+  <radialGradient id="light" cx="50%" cy="30%" r="65%"><stop offset="0" stop-color="#fff" stop-opacity="0.10"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <linearGradient id="cream" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6eedd"/><stop offset="1" stop-color="#dccdaf"/></linearGradient>
+  <mask id="starHole" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+    <rect width="1024" height="1024" fill="#fff"/>
+    <path transform="translate(442 348.6) scale(5.83)" d="M12 2.6l2.85 5.95 6.55.9-4.78 4.55 1.2 6.5L12 17.35 6.18 20.5l1.2-6.5L2.6 9.45l6.55-.9z" fill="#000" stroke="#000" stroke-width="0.9" stroke-linejoin="round"/>
+  </mask>
+  <filter id="lift" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.5"/></filter>
+</defs>
+<rect width="1024" height="1024" fill="url(#hide)" filter="url(#grain)"/>
+<rect width="1024" height="1024" fill="url(#light)"/>
+
+<g filter="url(#lift)"><g transform="translate(512 516) scale(1.2) translate(-512 -516)"><path d="M434 548.1 A150 150 0 1 1 590 548.1 L629.5 740 Q633.5 762 611 762 L413 762 Q390.5 762 394.5 740 Z" fill="none" stroke="url(#cream)" stroke-width="24" stroke-linejoin="round"/>
+        <path transform="translate(426.5 324.3) scale(7.12)" d="M12 2.6l2.85 5.95 6.55.9-4.78 4.55 1.2 6.5L12 17.35 6.18 20.5l1.2-6.5L2.6 9.45l6.55-.9z" fill="url(#cream)" stroke="url(#cream)" stroke-width="0.8" stroke-linejoin="round"/></g></g>
+</svg>
