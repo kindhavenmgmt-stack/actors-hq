@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Actor’s HQ</title>
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <script>
+    /* Apply Day / Night before the page draws (saved per browser; "auto" follows the Mac). */
+    try { var t = localStorage.getItem('ahq-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
+  <!-- home-screen app: its own name and icon (white shooting star on black) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Actor’s HQ">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="stylesheet" href="styles.css?v=20261121b">
+</head>
+<body>
+  <!-- global navigation (apple.com style) -->
+  <div class="dock" id="globalnav">
+    <a class="side-brand" href="#dashboard" aria-label="The Actor’s HQ home"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.6l2.85 5.95 6.55.9-4.78 4.55 1.2 6.5L12 17.35 6.18 20.5l1.2-6.5L2.6 9.45l6.55-.9z"/></svg></span><span class="brand-name">The Actor’s HQ</span></a>
+    <nav id="nav" aria-label="Main">
+      <a href="#dashboard" data-view="dashboard" title="Dashboard"><svg viewBox="0 0 24 24"><path d="M12 3.2 3 10v10.5c0 .6.4 1 1 1h5.5v-6.5h5V21.5H20c.6 0 1-.4 1-1V10z"/></svg><span>Dashboard</span></a>
+      <a href="#checks" data-view="checks" title="SAG Checks"><svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM6 9h7v2H6zm0 4h10v2H6z"/></svg><span>SAG Checks</span></a>
+      <a href="#team" data-view="team" title="Team Payouts"><svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5C15 14.2 10.3 13 8 13zm8 0c-.3 0-.6 0-1 .1a4.2 4.2 0 0 1 2 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5z"/></svg><span>Team Payouts</span></a>
+      <a href="#audit" data-view="audit" title="Payout audit"><svg viewBox="0 0 24 24"><path d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v6.1a6 6 0 0 0-2-.1V6h-2v1H8V6H6v14h5.3a6 6 0 0 0 1.2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1zm1 2v1h4V4zm7 9a4 4 0 0 1 3.3 6.3l2.2 2.2-1.4 1.4-2.2-2.2A4 4 0 1 1 17 13zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg><span>Payout audit</span></a>
+      <a href="#projects" data-view="projects" title="Projects"><svg viewBox="0 0 24 24"><path d="M10 3h4a2 2 0 0 1 2 2v1h4a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4V5a2 2 0 0 1 2-2zm0 2v1h4V5zm-6 7v7h16v-7h-6v2h-4v-2z"/></svg><span>Projects</span></a>
+      <a href="#bills" data-view="bills" title="Bills &amp; Subscriptions"><svg viewBox="0 0 24 24"><path d="M6 2h12a1 1 0 0 1 1 1v19l-3-2-3 2-3-2-3 2-2-1.3V3a1 1 0 0 1 1-1zm2 5v2h8V7zm0 4v2h8v-2zm0 4v2h5v-2z"/></svg><span>Bills &amp; Subs</span></a>
+      <a href="#writeoffs" data-view="writeoffs" title="Write-offs"><svg viewBox="0 0 24 24"><path d="M4 3h16v18l-2.7-1.6L14.7 21 12 19.4 9.3 21l-2.6-1.6L4 21zm4 4v2h8V7zm0 4v2h8v-2zm0 4v2h5v-2z"/></svg><span>Write-offs</span></a>
+      <a href="#calendar" data-view="calendar" title="Calendar"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14zM7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zm-8 4h2v2H7zm4 0h2v2h-2z"/></svg><span>Calendar</span></a>
+      <a href="#reports" data-view="reports" title="Reports"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm8 1.5V8h4.5zM8 12v6h2v-6zm3.5-2v8h2v-8zM15 14v4h2v-4z"/></svg><span>Reports</span></a>
+      <a href="#settings" data-view="settings" title="Settings"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3h-4l-.4 2.7a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.3 7.3 0 0 0 1.7 1L11 21h4l.4-2.7a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 3.5-3.5 3.5 3.5 0 0 1-3.5 3.5z"/></svg><span>Settings</span></a>
+    </nav>
+    <div class="nav-tools">
+      <button class="nav-icon theme-toggle" data-action="toggle-theme" title="Switch to Night mode" aria-label="Switch to Night mode">
+        <svg class="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5 8.5 8.5 0 1 0 20.5 14.6z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm-1-5h2v3h-2zm0 17h2v3h-2zM2 11h3v2H2zm17 0h3v2h-3zM4.2 5.6l1.4-1.4 2.1 2.1-1.4 1.4zm12.1 12.1 1.4-1.4 2.1 2.1-1.4 1.4zM4.2 18.4l2.1-2.1 1.4 1.4-2.1 2.1zM16.3 6.3l2.1-2.1 1.4 1.4-2.1 2.1z"/></svg>
+      </button>
+      <button class="nav-icon dock-add" data-action="add-check" title="Scan SAG check" aria-label="Scan SAG check"><svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg></button>
+      <button class="nav-icon nav-toggle" data-action="toggle-menu" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 8h16v1.6H4zm0 6.4h16V16H4z"/></svg></button>
+    </div>
+  </div>
+
+  <!-- ribbon (status line under the nav) -->
+  <header class="topbar">
+    <a class="brand" href="#dashboard" style="color:inherit;text-decoration:none"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.6l2.85 5.95 6.55.9-4.78 4.55 1.2 6.5L12 17.35 6.18 20.5l1.2-6.5L2.6 9.45l6.55-.9z"/></svg></span><span>The Actor’s HQ</span></a>
+    <span id="drive-status"></span>
+  </header>
+
+  <main id="main"></main>
+
+  <div id="modal-root"></div>
+  <div id="toast-root"></div>
+  <script>
+    /* If the app can't start (e.g. on a phone), show why instead of a blank page. */
+    (function () {
+      function show(msg, line) {
+        var m = document.getElementById('main');
+        if (!m || m.children.length) return;
+        m.innerHTML = '<div style="padding:28px 20px;font:15px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#ff6961">The app hit a problem starting up. Please send a screenshot of this:<br><code style="display:block;margin-top:10px;white-space:pre-wrap;color:inherit">' + String(msg || 'unknown error').replace(/</g, '&lt;') + (line ? ' (line ' + line + ')' : '') + '</code></div>';
+      }
+      window.addEventListener('error', function (e) { show(e.message || (e.error && e.error.message), e.lineno); });
+      window.addEventListener('unhandledrejection', function (e) { show('Promise: ' + (e.reason && (e.reason.message || e.reason))); });
+      setTimeout(function () { show('The page loaded but the app never drew anything (no error reported).'); }, 6000);
+    })();
+  </script>
+  <script src="local-config.js"></script><!-- private lists; only on your computer, never on GitHub -->
+  <script src="app.js?v=20261121b"></script>
+</body>
+</html>

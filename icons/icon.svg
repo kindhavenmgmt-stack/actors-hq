@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="tm" gradientUnits="userSpaceOnUse" x1="581.7" y1="438.3" x2="327.2" y2="692.8"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ta" gradientUnits="userSpaceOnUse" x1="475.6" y1="445.4" x2="341.3" y2="579.7"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="tb" gradientUnits="userSpaceOnUse" x1="574.6" y1="544.4" x2="440.3" y2="678.8"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="#000"/>
+  <g transform="translate(512 512) scale(1.32) translate(-512 -530)"><g transform="translate(-36 60)">
+    <polygon points="605.7,462.3 557.7,414.3 327.2,692.8" fill="url(#tm)"/>
+    <polygon points="485.5,455.3 465.7,435.5 341.3,579.7" fill="url(#ta)"/>
+    <polygon points="584.5,554.3 564.7,534.5 440.3,678.8" fill="url(#tb)"/>
+    <path transform="rotate(-12 610 410) translate(406 212.8) scale(17)" fill="#fff" stroke="#fff" stroke-width=".5" stroke-linejoin="round" d="M12 2.6l2.85 5.95 6.55.9-4.78 4.55 1.2 6.5L12 17.35 6.18 20.5l1.2-6.5L2.6 9.45l6.55-.9z"/>
+  </g></g>
+</svg>
