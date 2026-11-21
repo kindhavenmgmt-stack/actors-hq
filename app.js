@@ -1006,6 +1006,83 @@
     }
     return changed;
   }
+  // ---------- recalculating unpaid commissions after a rule changes ----------
+  // Only commissions nobody has settled yet change: paid, "took it first" and "not owed" are never touched.
+  function planRecalc() {
+    const changes = [];
+    const unpaid = (list) => round2(sum(list.filter((x) => ['owe', 'research'].includes(splitState(x))), (x) => num(x.amount)));
+    for (const c of state.checks) {
+      let next;
+      if (c.historical) {
+        const keep = c.splits.filter((x) => splitState(x) !== 'research');
+        const fresh = splitsFromRules(c).filter((f) => !keep.some((k) => k.memberId === f.memberId));
+        next = [...keep, ...fresh];
+      } else {
+        const fresh = splitsFromRules(c, '');
+        next = c.splits.flatMap((x) => {
+          if (splitState(x) !== 'owe') return [x];
+          const f = fresh.find((y) => y.memberId === x.memberId);
+          if (!f) return x.ruleId ? [] : [x]; // a rule-made split whose rule no longer applies goes away; hand-made ones stay
+          return [{ ...x, percent: f.percent, base: 'gross', amount: f.amount, ruleId: f.ruleId, ...(f.resolution === 'deducted' ? { resolution: 'deducted' } : {}) }];
+        });
+        for (const f of fresh) if (!next.some((y) => y.memberId === f.memberId)) next.push(f);
+      }
+      // compare only what matters (who, %, amount, status) so storage details never look like a change
+      const sig = (list) => JSON.stringify(list.map((x) => [x.memberId, num(x.percent), round2(num(x.amount)), splitState(x)]).sort());
+      if (sig(next) !== sig(c.splits)) changes.push({ c, next, before: unpaid(c.splits), after: unpaid(next) });
+    }
+    return changes;
+  }
+  async function offerRecalc(manual) {
+    const ch = planRecalc();
+    if (!ch.length) { if (manual) toast('Every unpaid commission already matches your rules'); return; }
+    const before = round2(sum(ch, (x) => x.before)), after = round2(sum(ch, (x) => x.after));
+    const logged = ch.filter((x) => !x.c.historical).length;
+    const ok = await uiConfirm(`Update ${ch.length} check${ch.length > 1 ? 's' : ''} to match your rules?\n\nUnpaid commission on ${ch.length > 1 ? 'these checks' : 'this check'} goes from ${money(before)} to ${money(after)}${logged && ch.length > 1 ? ` (${logged} of them logged in the app)` : ''}. Anything already paid, taken out first or marked not owed stays exactly as it is.`);
+    if (!ok) { toast(manual ? 'Nothing changed.' : 'Rule saved — checks not changed. You can update them any time from Commission rules.'); return; }
+    for (const x of ch) x.c.splits = x.next;
+    save(); render();
+    toast(`Updated ${ch.length} check${ch.length > 1 ? 's' : ''}`);
+  }
+  const ruleSentence = (r) => [
+    `${num(r.percent)}% of gross`,
+    r.payTypes?.length ? `${r.payTypes[0].toLowerCase()} only` : 'sessions and residuals',
+    !r.from && !r.to ? 'any date' : `${r.dateBasis === 'payment' ? 'paid' : 'work done'} ${r.from ? 'from ' + fmtDate(r.from) : 'up'}${r.to ? ' to ' + fmtDate(r.to) : ' onward'}`,
+    r.workTypes?.length ? r.workTypes.join(', ') : '',
+    r.employers ? `only ${r.employers}` : '',
+    r.takenOutSessions ? 'session cut taken out before I’m paid' : '',
+  ].filter(Boolean).join(' · ');
+  function viewRules() {
+    const rules = state.rules || [];
+    const proj = projectRules();
+    const people = [...state.settings.team, ...allMembers().filter((m) => m.former && rules.some((r) => r.memberId === m.id))];
+    const ruleRow = (r) => `<div class="list-item" data-action="edit-rule" data-id="${r.id}"><div class="grow"><div class="title">${esc(r.note || `${num(r.percent)}% commission`)}</div><div class="sub">${esc(ruleSentence(r))}</div></div><div class="right"><span class="amt">${num(r.percent)}%</span></div></div>`;
+    const projRow = (r) => `<div class="list-item" data-action="edit-project" data-id="${esc(r.projectId)}"><div class="grow"><div class="title">${esc(r.note)} <span class="pill">Project</span></div><div class="sub">${esc(ruleSentence({ ...r, employers: '' }))} · set on the project</div></div><div class="right"><span class="amt">${num(r.percent)}%</span></div></div>`;
+    return `
+      <div class="page-head">
+        <div><h1>Commission rules</h1><p>What each person earns from your checks. Every rule is a percentage of the gross amount. Tap a rule to change it.</p></div>
+        <button class="btn white" data-action="add-rule">+ Add rule</button>
+      </div>
+      <div class="grid" style="max-width:860px">
+        ${people.map((m) => {
+          const mine = rules.filter((r) => r.memberId === m.id), mp = proj.filter((r) => r.memberId === m.id);
+          return `<div class="card"><div class="card-head" style="gap:12px">${avatar(m)}<div style="flex:1"><h2 style="margin:0">${esc(m.name)}</h2>${m.company ? `<div class="muted small">${esc(m.company)}</div>` : ''}</div>${m.former ? '<span class="pill">Former</span>' : ''}</div>
+            <div class="card-body stack">
+              ${mine.length || mp.length ? `<div class="list">${mine.map(ruleRow).join('')}${mp.map(projRow).join('')}</div>` : '<div class="muted small">No rules yet — nothing is counted as owed to them.</div>'}
+              ${m.former ? '' : `<div class="row"><button class="btn sm" data-action="add-rule" data-member="${esc(m.id)}">+ Add rule for ${esc(m.name)}</button></div>`}
+            </div></div>`;
+        }).join('')}
+        <div class="card"><div class="card-head"><h2>How rules work</h2></div><div class="card-body stack">
+          <ul class="small muted" style="margin:0;padding-left:18px;line-height:1.6">
+            <li>A split written on a project (Projects tab) wins over these rules for that project.</li>
+            <li>If someone’s rate changed, end the old rule on the last day and add a new one starting the next day.</li>
+            <li>After you change a rule, the app shows which unpaid commissions would change and asks before updating them. Paid ones never change.</li>
+          </ul>
+          <div class="row"><button class="btn" data-action="reapply-rules">Check unpaid commissions against these rules</button></div>
+        </div></div>
+      </div>`;
+  }
+
   function ruleFormHTML(m) {
     const r = m.id ? (state.rules || []).find((x) => x.id === m.id) : { memberId: m.memberId || state.settings.team[0]?.id, percent: '', base: state.settings.splitBase || 'gross', from: '', to: '', workTypes: [], employers: '', note: '' };
     if (!r) return null;
@@ -1017,7 +1094,7 @@
         <div class="grid2">
           <label>Team member<select name="memberId">${state.settings.team.map((t) => `<option value="${esc(t.id)}" ${t.id === r.memberId ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
           <label><span>Commission % <span class="req">*</span></span><input name="percent" type="number" step="0.01" min="0" max="100" required value="${esc(r.percent)}" placeholder="e.g. 10"></label>
-          <label>Calculated on<select name="base"><option value="gross" ${r.base !== 'net' ? 'selected' : ''}>Gross amount</option><option value="net" ${r.base === 'net' ? 'selected' : ''}>Net amount</option></select></label>
+          <label>Calculated on<input value="Gross amount (all splits use gross)" disabled></label>
           <label>Role / note<input name="note" value="${esc(r.note || '')}" placeholder="e.g. Commercial agent"></label>
           <label>Starting<input name="from" type="date" value="${esc(r.from || '')}"></label>
           <label>Ending (leave blank if ongoing)<input name="to" type="date" value="${esc(r.to || '')}"></label>
@@ -1042,7 +1119,7 @@
   function submitRuleForm(form) {
     const f = form.elements;
     const data = {
-      memberId: f.memberId.value, percent: num(f.percent.value), base: f.base.value, note: f.note.value.trim(),
+      memberId: f.memberId.value, percent: num(f.percent.value), base: 'gross', note: f.note.value.trim(),
       from: f.from.value || '', to: f.to.value || '', employers: f.employers.value.trim(),
       dateBasis: f.dateBasis.value, payTypes: f.payTypes.value ? [f.payTypes.value] : [], takenOutSessions: !!f.takenOutSessions?.checked,
       workTypes: [...form.querySelectorAll('input[name="workTypes"]:checked')].map((x) => x.value),
@@ -1052,9 +1129,9 @@
     if (ui.modal.id) Object.assign(state.rules.find((x) => x.id === ui.modal.id), data);
     else state.rules.push({ id: uid(), ...data });
     state.audit.rulesConfirmed = false;
-    const n = reapplyRules();
     save(); closeModal(); render();
-    toast(`Rule saved${n ? ` — recalculated ${n} check${n > 1 ? 's' : ''}` : ''}`);
+    toast('Rule saved');
+    offerRecalc();
   }
 
   // ---------- importing past checks ----------
@@ -1417,7 +1494,7 @@
             <div class="grow"><div class="title">${esc(m?.name || 'Former member')} · ${num(r.percent)}% of ${r.base === 'net' ? 'net' : 'gross'}${r.note ? ` <span class="muted" style="font-weight:500">· ${esc(r.note)}</span>` : ''}</div>
             <div class="sub">${r.dateBasis === 'payment' ? 'Paid ' : 'Work done '}${r.from ? fmtDate(r.from) : 'any time'} → ${r.to ? fmtDate(r.to) : 'now'} · ${r.payTypes?.length ? esc(r.payTypes[0]) + ' only · ' : ''}${esc(ruleWorkText(r))}${r.employers ? ` · only ${esc(r.employers)}` : ''}</div></div></div>`; }).join('')}</div>`
           : `<div class="muted">No rules yet. Add one for each person, with a separate rule for each rate or period.</div>`}
-        <div class="row"><button class="btn sm primary" data-action="add-rule">+ Add rule</button>${rules.length ? `<button class="btn sm" data-action="reapply-rules">Recalculate unresolved</button>${state.audit.rulesConfirmed ? '' : '<button class="btn sm" data-action="confirm-rules">These rules are right</button>'}` : ''}</div>
+        <div class="row"><a class="btn sm" href="#rules">Open rules page</a><button class="btn sm primary" data-action="add-rule">+ Add rule</button>${rules.length ? `<button class="btn sm" data-action="reapply-rules">Recalculate unresolved</button>${state.audit.rulesConfirmed ? '' : '<button class="btn sm" data-action="confirm-rules">These rules are right</button>'}` : ''}</div>
       </div></div>`;
   }
   function evidenceCard() {
@@ -2006,7 +2083,7 @@
   function render() {
     document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === ui.view));
     const main = $('#main');
-    const views = { dashboard: viewDashboard, checks: viewChecks, team: viewTeam, audit: viewAudit, projects: viewProjects, bills: viewBills, writeoffs: viewWriteoffs, calendar: viewCalendar, reports: viewReports, settings: viewSettings };
+    const views = { dashboard: viewDashboard, checks: viewChecks, team: viewTeam, rules: viewRules, audit: viewAudit, projects: viewProjects, bills: viewBills, writeoffs: viewWriteoffs, calendar: viewCalendar, reports: viewReports, settings: viewSettings };
     // Keep focus/caret in the checks search box while typing
     const active = document.activeElement;
     const keepSearch = active && active.id === 'check-search' ? active.selectionStart : null;
@@ -2319,7 +2396,7 @@
     return `
       <div class="page-head">
         <div><h1>Team Payouts</h1><p>What you owe ${esc(state.settings.team.map((m) => m.name).join(', ').replace(/, ([^,]*)$/, ' and $1'))}, and what you’ve already paid them.</p></div>
-        <a class="btn white" href="#settings">Edit team &amp; percentages</a>
+        <div class="row" style="gap:8px;flex-wrap:wrap"><a class="btn white" href="#rules">Commission rules</a><a class="btn white" href="#settings">Edit team</a></div>
       </div>
       <div class="grid team-grid">
         ${members.map((m) => {
@@ -2944,7 +3021,7 @@
           </div>
         </div>
         <div class="card">
-          <div class="card-head"><h2>Team &amp; default split</h2><button class="btn sm" data-action="add-member">+ Add person</button></div>
+          <div class="card-head"><h2>Team &amp; default split</h2><div class="row" style="gap:8px"><a class="btn sm" href="#rules">Commission rules</a><button class="btn sm" data-action="add-member">+ Add person</button></div></div>
           <div class="card-body stack">
             <p class="muted small" style="margin:0">These percentages are filled in automatically for each new check (you can still change them per check). Changing them here doesn’t change checks you’ve already logged.</p>
             <div class="stack" style="gap:10px">${s.team.map((m) => `
@@ -3600,11 +3677,11 @@
       if (!await uiConfirm('Delete this rule? Commissions that still need research will be recalculated without it.')) return;
       state.rules = state.rules.filter((r) => r.id !== d.id);
       state.audit.rulesConfirmed = false;
-      const n = reapplyRules();
       save(); closeModal(); render();
-      toast(`Rule deleted${n ? ` — recalculated ${n} checks` : ''}`);
+      toast('Rule deleted');
+      offerRecalc();
     },
-    'reapply-rules': () => { const n = reapplyRules(); save(); render(); toast(n ? `Recalculated ${n} check${n > 1 ? 's' : ''}` : 'Everything already matches your rules'); },
+    'reapply-rules': () => offerRecalc(true),
     'confirm-rules': async () => {
       if (!await uiConfirm('Do these rules match the actual agreements (rate, gross vs. net, dates, and which work)? Every “owed” amount comes from them.')) return;
       state.audit.rulesConfirmed = true;
@@ -4147,7 +4224,7 @@
 
   // Page switching that doesn't depend on the browser following "#page" links.
   // (Inside Google's frame — the phone app — those links do nothing, so the app switches pages itself.)
-  const VIEWS = ['dashboard', 'checks', 'team', 'audit', 'projects', 'bills', 'writeoffs', 'calendar', 'reports', 'settings'];
+  const VIEWS = ['dashboard', 'checks', 'team', 'rules', 'audit', 'projects', 'bills', 'writeoffs', 'calendar', 'reports', 'settings'];
   // Sections fade up as they scroll into view. Only runs when you open a page (not on every small update),
   // so editing things never makes the screen flash.
   let revealObserver = null;
